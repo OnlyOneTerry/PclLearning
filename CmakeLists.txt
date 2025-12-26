@@ -1,0 +1,142 @@
+cmake_minimum_required(VERSION 3.16)
+project(PCL_Contour_Extraction)
+
+set(CMAKE_CXX_STANDARD 17)
+
+# 设置PCL路径
+set(PCL14_DIR "D:/installpack/PCL _1.14.1")
+
+# 检查PCL目录是否存在
+if(NOT EXISTS "${PCL14_DIR}")
+    message(FATAL_ERROR "PCL14目录不存在: ${PCL14_DIR}，请检查路径")
+endif()
+
+message(STATUS "使用PCL 1.14路径: ${PCL14_DIR}")
+
+# 创建可执行文件
+add_executable(contour_extraction src/main.cpp)
+
+# 直接配置包含目录
+target_include_directories(contour_extraction PRIVATE
+    "${PCL14_DIR}/include"
+    "${PCL14_DIR}/include/pcl-1.14"
+)
+
+# 添加可选的第三方包含目录
+if(EXISTS "${PCL14_DIR}/3rdParty")
+    if(EXISTS "${PCL14_DIR}/3rdParty/eigen/include/eigen3")
+        target_include_directories(contour_extraction PRIVATE
+            "${PCL14_DIR}/3rdParty/eigen/include/eigen3"
+        )
+    endif()
+    
+    if(EXISTS "${PCL14_DIR}/3rdParty/flann/include")
+        target_include_directories(contour_extraction PRIVATE
+            "${PCL14_DIR}/3rdParty/flann/include"
+        )
+    endif()
+    
+    if(EXISTS "${PCL14_DIR}/3rdParty/boost/include")
+        target_include_directories(contour_extraction PRIVATE
+            "${PCL14_DIR}/3rdParty/boost/include"
+        )
+    endif()
+
+    if(EXISTS "${PCL14_DIR}/3rdParty/VTK/include")
+    target_include_directories(contour_extraction PRIVATE
+        "${PCL14_DIR}/3rdParty/VTK/include"
+        "${PCL14_DIR}/3rdParty/VTK/include/vtk-9.3"
+    )
+    endif()
+endif()
+
+# 链接目录
+target_link_directories(contour_extraction PRIVATE
+    "${PCL14_DIR}/lib"
+)
+
+# 添加第三方库目录
+if(EXISTS "${PCL14_DIR}/3rdParty/boost/lib")
+    target_link_directories(contour_extraction PRIVATE
+        "${PCL14_DIR}/3rdParty/boost/lib"
+    )
+endif()
+
+if(EXISTS "${PCL14_DIR}/3rdParty/flann/lib")
+    target_link_directories(contour_extraction PRIVATE
+        "${PCL14_DIR}/3rdParty/flann/lib"
+    )
+
+endif()
+if(EXISTS "${PCL14_DIR}/3rdParty/VTK/lib")
+target_link_directories(contour_extraction PRIVATE
+    "${PCL14_DIR}/3rdParty/VTK/lib"
+)
+endif()
+
+# 首先链接VTK库
+target_link_libraries(contour_extraction PRIVATE
+    # VTK库应该放在PCL库之前
+    # 1. 首先链接系统工具库
+    vtksys-9.3
+    
+    # 2. 核心基础库
+    vtkCommonCore-9.3
+    vtkCommonDataModel-9.3
+    vtkCommonMath-9.3
+    vtkCommonSystem-9.3
+    vtkCommonMisc-9.3
+    vtkCommonExecutionModel-9.3
+    
+    # 3. 算法和过滤器
+    vtkFiltersCore-9.3
+    vtkCommonComputationalGeometry-9.3
+    
+    # 4. 可视化库
+    vtkRenderingCore-9.3
+    vtkRenderingOpenGL2-9.3
+    vtkInteractionStyle-9.3
+    vtkRenderingFreeType-9.3
+    vtkRenderingAnnotation-9.3
+    vtkRenderingContext2D-9.3
+    
+    # 5. IO库
+    vtkIOImage-9.3
+    vtkImagingCore-9.3
+    vtkImagingSources-9.3
+    
+    # 6. 几何处理
+    vtkFiltersGeometry-9.3
+    vtkFiltersModeling-9.3
+    vtkFiltersSources-9.3
+    vtkFiltersGeneral-9.3
+)
+
+# 链接PCL库
+target_link_libraries(contour_extraction PRIVATE
+    pcl_common
+    pcl_io
+    pcl_filters
+    pcl_features
+    pcl_surface
+    pcl_segmentation
+    pcl_search
+    pcl_kdtree
+    pcl_visualization
+)
+
+# 链接第三方库
+target_link_libraries(contour_extraction PRIVATE
+    flann-1.14.1
+    libboost_system*
+    libboost_filesystem*
+    libboost_thread*
+)
+
+
+# 系统库
+if(UNIX AND NOT APPLE)
+    target_link_libraries(contour_extraction PRIVATE pthread dl m)
+elseif(WIN32)
+    target_link_libraries(contour_extraction PRIVATE ws2_32)
+endif()
